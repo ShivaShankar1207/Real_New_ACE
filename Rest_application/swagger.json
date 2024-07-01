@@ -1,0 +1,10 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "title" : "Rest_application",
+    "version" : "1.0.0",
+    "description" : "Rest_application"
+  },
+  "paths" : { },
+  "basePath" : "/rest_application/v1"
+}

@@ -1,0 +1,10 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "title" : "swaggerrestapi",
+    "version" : "1.0.0",
+    "description" : "swaggerrestapi"
+  },
+  "paths" : { },
+  "basePath" : "/swaggerrestapi/v1"
+}

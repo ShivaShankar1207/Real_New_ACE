@@ -1,0 +1,94 @@
+
+path A_projectlevel_subflow;
+CREATE COMPUTE MODULE ZSBSCPA_MSG_Compute3
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+
+		CALL GenereateResponseToChannel();
+		RETURN FALSE;--changed--
+	END;
+	CREATE PROCEDURE GenereateResponseToChannel() BEGIN
+		DECLARE rc BOOLEAN FALSE;
+		CALL initLog4j(LOG_CONFIG_PATH) INTO rc;
+		IF ( rc = FALSE ) THEN
+			SET Environment.Variables.Log4j.ErrorMsg = LOG4J_INIT_ERROR_MSG;
+		END IF;
+		SET OutputRoot.Properties=InputRoot.Properties;
+		DECLARE ccidRef INTEGER InputRoot.Properties.CodedCharSetId;
+		DECLARE encodeRef INTEGER InputRoot.Properties.Encoding;
+		DECLARE domainName CHARACTER FIELDNAME(InputBody);
+		DECLARE domainDataRef REFERENCE TO InputRoot.JSON.Data;
+		DECLARE outRef REFERENCE TO OutputRoot.JSON.Data;
+		DECLARE outRefer REFERENCE TO OutputRoot;
+		DECLARE inRef REFERENCE TO InputRoot.JSON.Data;
+		DECLARE dbLoggingTime TIMESTAMP CURRENT_TIME;
+		DECLARE dbLoggingDate TIMESTAMP CURRENT_TIMESTAMP;
+		IF FIELDNAME(InputBody) LIKE 'JSON' THEN
+			DECLARE inRef REFERENCE TO InputRoot.JSON.Data;
+			SET Environment.Variables.resMsg = getPayLoad(domainName,domainDataRef,encodeRef,ccidRef);
+		ELSE
+			DECLARE inRef REFERENCE TO InputRoot.BLOB.BLOB;
+			CREATE LASTCHILD OF OutputRoot DOMAIN('JSON') PARSE(inRef,encodeRef,ccidRef);
+			SET domainName = 'JSON';
+			SET Environment.Variables.resMsg = getPayLoad(domainName,OutputRoot.JSON,encodeRef,ccidRef);
+		END IF;
+		DECLARE Env REFERENCE TO Environment.Variables;
+		DECLARE responceCode CHARACTER InputRoot.HTTPResponseHeader."X-Original-HTTP-Status-Code";
+		CASE
+		WHEN responceCode LIKE '200' OR inRef.header.status LIKE 'success' THEN
+			---Success Case---
+--			CALL UPDATE_SB_SCP_STATUS(Env.UID,'','',inRef.body.endToEndReference,responceCode,
+--			'NOT APPLICABLE','NOT APPLICABLE',Environment.Variables.resMsg,'SUCCESS',CAST(Env.CreationDate AS TIMESTAMP));
+--			commit;
+--			---DB Logging---
+
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL DBLogging(Env.UID,Environment.Variables.resMsg,'T24 Success Response',ApplicationLabel,BrokerName,CAST(dbLoggingTime AS CHARACTER FORMAT 'HHmmss'),
+				CAST(dbLoggingDate AS CHARACTER FORMAT 'yyyyMMdd'),inRef.body.endToEndReference,'','',outRefer);
+			END IF;
+			SET OutputRoot=InputRoot;
+			SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+			PROPAGATE TO TERMINAL 'out';
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','..........Logging T24 Success Response...............') INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','T24 Status:: SUCCESS') INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','T24 Response :: '||Environment.Variables.resMsg) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','Message ID :: '||Environment.Variables.UID) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','..............End of Logging...........*') INTO rc;
+			END IF;
+			-- SET outRef = Env.resMsg;
+			-- SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = resQueueName;
+			-- PROPAGATE TO TERMINAL 'out';
+		ELSE
+			SET OutputRoot = NULL;
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL DBLogging(Env.UID,Environment.Variables.resMsg,'T24 Failure Response',ApplicationLabel,BrokerName,CAST(dbLoggingTime AS CHARACTER FORMAT 'HHmmss'),
+				CAST(dbLoggingDate AS CHARACTER FORMAT 'yyyyMMdd'),'','','',outRefer);
+			END IF;
+			SET OutputRoot.JSON=InputRoot.JSON;
+			SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+			PROPAGATE TO TERMINAL 'out';
+			
+			---Failure Case---
+--			CALL UPDATE_SB_SCP_STATUS(Env.UID,'','','',responceCode,'NOT APPLICABLE','NOT APPLICABLE',Environment.Variables.resMsg,'FAILURE',CAST(Env.CreationDate AS TIMESTAMP));
+--			commit;
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','..........Logging T24 Failure Response...............') INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','T24 Status:: FAILURE'||'/'||'ResponseCode:: '||responceCode) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','T24 Response:: '||Environment.Variables.resMsg) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','Message ID:: '||Environment.Variables.UID) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','..............End of Logging...........*') INTO rc;
+			END IF;
+			SET OutputLocalEnvironment.Destination.File.Directory = BackendFailure;
+			SET OutputLocalEnvironment.Destination.File.Name = Environment.Variables.FileName||'_'||Environment.Variables.Crt_Acc||'_'||CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'HHmmss')||'.csv';
+			SET OutputRoot.Properties= InputRoot.Properties;
+			SET OutputRoot.Properties.MessageSet = '{SB_CSV_Lib}';
+			SET OutputRoot.Properties.MessageType = '{}:stewardBank_CSV';
+			CREATE LASTCHILD OF OutputRoot DOMAIN('DFDL')PARSE(Environment.MQRFH2.reqMsg ENCODING encodeRef CCSID ccidRef SET '{SB_CSV_Lib}' TYPE '{}:stewardBank_CSV');
+			PROPAGATE TO TERMINAL 'out1';
+			-- SET OutputRoot.JSON.Data = Environment.Variables.resMsg;
+			-- SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = resQueueName;
+			-- PROPAGATE TO TERMINAL 'out';
+		END CASE;
+	END;
+END MODULE;

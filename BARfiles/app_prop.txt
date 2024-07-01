@@ -1,0 +1,37 @@
+BIP1052I: Reading Bar file using runtime mqsireadbar...
+C:\Users\Sreenivas Bandaru\IBM\ACET12\TestSample\BARfiles\app_bar.bar:
+  ESQL_Scenario_APP.appzip (2/29/24 3:55 PM):
+    ESQL_MSG.cmf (2/29/24 3:55 PM):
+    application.descriptor (2/29/24 3:55 PM):
+    Deployment descriptor:
+      startMode
+      ESQL_MSG#additionalInstances
+      ESQL_MSG#commitCount
+      ESQL_MSG#commitInterval
+      ESQL_MSG#coordinatedTransaction
+      ESQL_MSG#consumerPolicySet
+      ESQL_MSG#providerPolicySet
+      ESQL_MSG#consumerPolicySetBindings
+      ESQL_MSG#providerPolicySetBindings
+      ESQL_MSG#securityProfileName
+      ESQL_MSG#monitoringProfile
+      ESQL_MSG#startMode
+      ESQL_MSG#startInstancesWhenFlowStarts
+      ESQL_MSG#maximumRateMsgsPerSec
+      ESQL_MSG#wlmPolicy
+      ESQL_MSG#notificationThresholdMsgsPerSec
+      ESQL_MSG#processingTimeoutSec
+      ESQL_MSG#processingTimeoutAction
+      ESQL_MSG#Compute.connectDatasourceBeforeFlowStarts
+      ESQL_MSG#Compute.dataSource
+      ESQL_MSG#Compute.validateMaster
+      ESQL_MSG#HTTP Input.URLSpecifier = /scene
+      ESQL_MSG#HTTP Input.decompressInputMessage
+      ESQL_MSG#HTTP Input.faultFormat
+      ESQL_MSG#HTTP Input.securityProfileName
+      ESQL_MSG#HTTP Input.timeoutForClient
+      ESQL_MSG#HTTP Input.useHTTPS
+      ESQL_MSG#HTTP Input.validateMaster
+      ESQL_MSG#HTTP Reply.validateMaster
+
+BIP8071I: Successful command completion.

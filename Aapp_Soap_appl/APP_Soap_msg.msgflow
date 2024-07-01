@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ComIbmCompute.msgnode="ComIbmCompute.msgnode" xmlns:ComIbmSOAPInput.msgnode="ComIbmSOAPInput.msgnode" xmlns:ComIbmSOAPReply.msgnode="ComIbmSOAPReply.msgnode" xmlns:ComIbmSOAPRequest.msgnode="ComIbmSOAPRequest.msgnode" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:eflow="http://www.ibm.com/wbi/2005/eflow" xmlns:utility="http://www.ibm.com/wbi/2005/eflow_utility" nsURI="APP_Soap_msg.msgflow" nsPrefix="APP_Soap_msg.msgflow">
+  <eClassifiers xmi:type="eflow:FCMComposite" name="FCMComposite_1" nodeLayoutStyle="RECTANGLE">
+    <eSuperTypes href="http://www.ibm.com/wbi/2005/eflow#//FCMBlock"/>
+    <translation xmi:type="utility:TranslatableString" key="APP_Soap_msg" bundleName="APP_Soap_msg" pluginId="Aapp_Soap_appl"/>
+    <colorGraphic16 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/Aapp_Soap_appl/icons/full/obj16/APP_Soap_msg.gif"/>
+    <colorGraphic32 xmi:type="utility:GIFFileGraphic" resourceName="platform:/plugin/Aapp_Soap_appl/icons/full/obj30/APP_Soap_msg.gif"/>
+    <composition>
+      <nodes xmi:type="ComIbmSOAPInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_1" location="8,64" wsdlFileName="NewWSDLFile1.2.wsdl" selectedPortType="NewWSDLFile1.2" selectedBinding="NewWSDLFile1.2SOAP" selectedPort="NewWSDLFile1.2SOAP" targetNamespace="http://www.example.org/NewWSDLFile1.2/" useHTTPTransport="true" urlSelector="/soaptest" allowQueryWSDL="true">
+        <translation xmi:type="utility:ConstantString" string="SOAP Input"/>
+      </nodes>
+      <nodes xmi:type="ComIbmSOAPReply.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_2" location="609,110">
+        <translation xmi:type="utility:ConstantString" string="SOAP Reply"/>
+      </nodes>
+      <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_3" location="268,127" computeExpression="esql://routine/#APP_Soap_msg_Compute.Main">
+        <translation xmi:type="utility:ConstantString" string="Compute"/>
+      </nodes>
+      <nodes xmi:type="ComIbmSOAPRequest.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_6" location="384,65" wsdlFileName="NewWSDLFile1.2.wsdl" selectedPortType="NewWSDLFile1.2" selectedBinding="NewWSDLFile1.2SOAP" selectedOperation="NewOperation" selectedPort="NewWSDLFile1.2SOAP" targetNamespace="http://www.example.org/NewWSDLFile1.2/" useHTTPTransport="true" webServiceURL="http://localhost:7803/soaptest" sslProtocol="SSL">
+        <translation xmi:type="utility:ConstantString" string="SOAP Request"/>
+      </nodes>
+      <nodes xmi:type="ComIbmSOAPInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_7" location="53,138" wsdlFileName="NewWSDLFile1.2.wsdl" selectedPortType="NewWSDLFile1.2" selectedBinding="NewWSDLFile1.2SOAP" selectedPort="NewWSDLFile1.2SOAP" targetNamespace="http://www.example.org/NewWSDLFile1.2/" useHTTPTransport="true" urlSelector="/soaptest">
+        <translation xmi:type="utility:ConstantString" string="SOAP Input1"/>
+      </nodes>
+      <nodes xmi:type="ComIbmSOAPReply.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_8" location="503,158">
+        <translation xmi:type="utility:ConstantString" string="SOAP Reply1"/>
+      </nodes>
+      <nodes xmi:type="ComIbmSOAPInput.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_9" location="73,202" wsdlFileName="NewWSDLFile1.2.wsdl" selectedPortType="NewWSDLFile1.2" selectedBinding="NewWSDLFile1.2SOAP" selectedPort="NewWSDLFile1.2SOAP" targetNamespace="http://www.example.org/NewWSDLFile1.2/" useHTTPTransport="true" urlSelector="/soaptest">
+        <translation xmi:type="utility:ConstantString" string="SOAP Input2"/>
+      </nodes>
+      <nodes xmi:type="ComIbmSOAPReply.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_10" location="539,214">
+        <translation xmi:type="utility:ConstantString" string="SOAP Reply2"/>
+      </nodes>
+      <nodes xmi:type="ComIbmCompute.msgnode:FCMComposite_1" xmi:id="FCMComposite_1_11" location="312,145" computeExpression="esql://routine/#APP_Soap_msg_Compute1.Main">
+        <translation xmi:type="utility:ConstantString" string="Compute1"/>
+      </nodes>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_7" targetNode="FCMComposite_1_2" sourceNode="FCMComposite_1_6" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_8" targetNode="FCMComposite_1_3" sourceNode="FCMComposite_1_7" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_9" targetNode="FCMComposite_1_8" sourceNode="FCMComposite_1_3" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_10" targetNode="FCMComposite_1_11" sourceNode="FCMComposite_1_9" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_11" targetNode="FCMComposite_1_10" sourceNode="FCMComposite_1_11" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+      <connections xmi:type="eflow:FCMConnection" xmi:id="FCMConnection_12" targetNode="FCMComposite_1_6" sourceNode="FCMComposite_1_1" sourceTerminalName="OutTerminal.out" targetTerminalName="InTerminal.in"/>
+    </composition>
+    <propertyOrganizer/>
+    <stickyBoard/>
+  </eClassifiers>
+</ecore:EPackage>

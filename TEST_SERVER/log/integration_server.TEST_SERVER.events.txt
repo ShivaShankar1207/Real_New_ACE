@@ -1,0 +1,41 @@
+2024-04-30 05:27:07.721591Z: [Thread 7964] (Msg 1/1) BIP1990I: Integration server 'TEST_SERVER' starting initialization; version '12.0.3.0' (64-bit) 
+2024-04-30 05:27:07.763398Z: [Thread 7964] (Msg 1/1) BIP9905I: Initializing resource managers. 
+2024-04-30 05:27:17.201038Z: [Thread 7964] (Msg 1/1) BIP9906I: Reading deployed resources. 
+2024-04-30 05:27:18.666328Z: [Thread 9952] (Msg 1/1) BIP2866I: IBM App Connect Enterprise administration security is inactive. 
+2024-04-30 05:27:18.717266Z: [Thread 9952] (Msg 1/1) BIP3132I: The HTTP Listener has started listening on port '7600' for 'RestAdmin http' connections. 
+2024-04-30 05:27:18.720468Z: [Thread 7964] (Msg 1/1) BIP1991I: Integration server has finished initialization. 
+2024-04-30 05:29:21.099908Z: [Thread 7880] (Msg 1/1) BIP2152I: Configuration message received. 
+2024-04-30 05:29:21.576852Z: [Thread 7880] (Msg 1/1) BIP2155I: About to 'Initialize' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 05:29:26.152624Z: [Thread 7880] (Msg 1/1) BIP9342I: Created compiled 'XMLNSC' schema file 'Tcp_IP_ServerApp/$mqsiApplication.bir'. 
+2024-04-30 05:29:40.021612Z: [Thread 7880] (Msg 1/1) BIP9341I: Created compiled 'DFDL' schema file 'Tcp_IP_ServerApp/$mqsiApplication.dpif'. 
+2024-04-30 05:29:40.490968Z: [Thread 7880] (Msg 1/1) BIP5731W: TCPIP Server Connection manager with connection details: '9780' is being 'started'. 
+2024-04-30 05:29:40.521096Z: [Thread 7880] (Msg 1/1) BIP2155I: About to 'Start' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 05:29:40.521688Z: [Thread 7880] (Msg 1/1) BIP2269I: Deployed resource 'tcp_ip' (uuid='tcp_ip',type='MessageFlow') started successfully. 
+2024-04-30 05:29:40.521788Z: [Thread 7880] (Msg 1/1) BIP9332I: Application 'Tcp_IP_ServerApp' has been created successfully. 
+2024-04-30 05:29:40.521864Z: [Thread 7880] (Msg 1/1) BIP9326I: The source 'Tcp_IP_ServerAppproject.generated.bar' has been successfully deployed. 
+2024-04-30 05:29:40.522400Z: [Thread 7880] (Msg 1/1) BIP2154I: Integration server finished with Configuration message. 
+2024-04-30 05:32:51.213604Z: [Thread 5644] (Msg 1/1) BIP2152I: Configuration message received. 
+2024-04-30 05:32:51.213720Z: [Thread 5644] (Msg 1/1) BIP2153I: About to 'deleteAll' an integration server. 
+2024-04-30 05:32:51.214536Z: [Thread 5644] (Msg 1/1) BIP2155I: About to 'Stop' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 05:32:52.299824Z: [Thread 5644] (Msg 1/1) BIP2271I: Deployed resource 'tcp_ip' (uuid='tcp_ip',type='MessageFlow') successfully stopped. 
+2024-04-30 05:32:52.300072Z: [Thread 5644] (Msg 1/1) BIP2155I: About to 'TearDown' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 05:32:52.301212Z: [Thread 5644] (Msg 1/1) BIP5731W: TCPIP Server Connection manager with connection details: '9780' is being 'stopped'. 
+2024-04-30 05:32:52.360392Z: [Thread 5644] (Msg 1/1) BIP9521I: Application 'Tcp_IP_ServerApp' has been deleted. 
+2024-04-30 05:32:52.375372Z: [Thread 5644] (Msg 1/1) BIP2154I: Integration server finished with Configuration message. 
+2024-04-30 05:36:13.527476Z: [Thread 9568] (Msg 1/1) BIP2152I: Configuration message received. 
+2024-04-30 05:36:13.788599Z: [Thread 9568] (Msg 1/1) BIP2155I: About to 'Initialize' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 05:36:15.091975Z: [Thread 9568] (Msg 1/1) BIP9342I: Created compiled 'XMLNSC' schema file 'TCP_IP_ClientApp/$mqsiApplication.bir'. 
+2024-04-30 05:36:19.487602Z: [Thread 9568] (Msg 1/1) BIP9341I: Created compiled 'DFDL' schema file 'TCP_IP_ClientApp/$mqsiApplication.dpif'. 
+2024-04-30 05:36:19.727784Z: [Thread 9568] (Msg 1/1) BIP2155I: About to 'Start' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 05:36:19.728574Z: [Thread 9568] (Msg 1/1) BIP2269I: Deployed resource 'tcp_ip_msgflow' (uuid='tcp_ip_msgflow',type='MessageFlow') started successfully. 
+2024-04-30 05:36:19.728734Z: [Thread 9568] (Msg 1/1) BIP9332I: Application 'TCP_IP_ClientApp' has been created successfully. 
+2024-04-30 05:36:19.728810Z: [Thread 9568] (Msg 1/1) BIP9326I: The source 'TCP_IP_ClientAppproject.generated.bar' has been successfully deployed. 
+2024-04-30 05:36:19.729420Z: [Thread 9568] (Msg 1/1) BIP2154I: Integration server finished with Configuration message. 
+2024-04-30 05:37:57.670548Z: [Thread 4788] (Msg 1/1) BIP2152I: Configuration message received. 
+2024-04-30 05:37:57.670672Z: [Thread 4788] (Msg 1/1) BIP2153I: About to 'deleteAll' an integration server. 
+2024-04-30 05:37:57.673668Z: [Thread 4788] (Msg 1/1) BIP2155I: About to 'Stop' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 05:38:00.735621Z: [Thread 4788] (Msg 1/1) BIP2271I: Deployed resource 'tcp_ip_msgflow' (uuid='tcp_ip_msgflow',type='MessageFlow') successfully stopped. 
+2024-04-30 05:38:00.735972Z: [Thread 4788] (Msg 1/1) BIP2155I: About to 'TearDown' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 05:38:00.737402Z: [Thread 4788] (Msg 1/1) BIP5731W: TCPIP Server Connection manager with connection details: '192.168.3.117:9699' is being 'stopped'. 
+2024-04-30 05:38:00.782937Z: [Thread 4788] (Msg 1/1) BIP9521I: Application 'TCP_IP_ClientApp' has been deleted. 
+2024-04-30 05:38:00.784434Z: [Thread 4788] (Msg 1/1) BIP2154I: Integration server finished with Configuration message. 

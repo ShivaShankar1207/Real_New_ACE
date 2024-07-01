@@ -1,0 +1,22 @@
+
+
+Importing file: C:\Users\Sreenivas Bandaru\IBM\ACET12\TestSample\WS_Application1\WSApplication.wsdl
+
+The WSDL import will proceed with bindings WSApplicationSOAP.
+Creating wsdl schema document for file:///C:/Users/Sreenivas Bandaru/IBM/ACET12/TestSample/WS_Application1/WSApplication.wsdl.
+Parsing wsdl binding {http://www.example.org/WSApplication/}WSApplicationSOAP.
+Parsing wsdl binding input NewOperation.
+Parsing wsdl binding output NewOperation.
+Processing doc style for operation NewOperation.
+Populating WSDL schema WSApplication.xsd.
+Creating file WSApplication.xsd in the workspace.
+Creating file WSApplication_InlineSchema1.xsd in the workspace.
+Copying source WSDL WSApplication.wsdl to WSApplication.wsdl.
+
+Elapsed time processing this message definition file: 1.909 seconds
+Number of warnings for this message definition file: 0
+
+
+Number of files processed: 1
+
+

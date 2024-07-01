@@ -1,0 +1,280 @@
+
+
+path A_projectlevel_subflow;
+DECLARE LOG_CONFIG_PATH EXTERNAL CHARACTER '';
+DECLARE RAW_AUDIT_QNAME EXTERNAL CHARACTER '';
+DECLARE ERROR_AUDIT_QNAME EXTERNAL CHARACTER '';
+DECLARE LOG4J_INIT_ERROR_MSG EXTERNAL CHARACTER '';
+DECLARE EXCEPTION_Q EXTERNAL CHARACTER '';
+DECLARE IsLogRequired EXTERNAL CHARACTER'';
+DECLARE UUID SHARED CHARACTER '';
+DECLARE ZSS_Queue, T24_Queue EXTERNAL CHARACTER '';
+CREATE COMPUTE MODULE ZSBSCPA_MSG_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		DECLARE domainName CHARACTER FIELDNAME(InputBody);
+		DECLARE Tran_Id CHARACTER InputRoot.DFDL.stewardBank_CSV.record.Tran_ID;
+		CASE
+		WHEN domainName LIKE 'DFDL' THEN
+			DECLARE outRef REFERENCE TO OutputRoot.DFDL.ISO8583_1987;
+			SET Environment.MQRFH2= InputRoot.MQRFH2;
+			SET Environment.Variable.data = InputRoot.DFDL;
+			DECLARE reqMsg,procCodeData,QueueName CHARACTER '';
+			DECLARE rc BOOLEAN FALSE;
+			DECLARE ccidRef INTEGER InputRoot.Properties.CodedCharSetId;
+			DECLARE encodeRef INTEGER InputRoot.Properties.Encoding;
+			DECLARE inRef REFERENCE TO InputRoot;
+			DECLARE dbLoggingTime TIMESTAMP CURRENT_TIME;
+			DECLARE dbLoggingDate TIMESTAMP CURRENT_TIMESTAMP;
+			DECLARE domainDataRef REFERENCE TO InputRoot.DFDL.stewardBank_CSV;
+			DECLARE domainName CHARACTER 'stewardBank_CSV';
+			DECLARE Response ROW;
+			DECLARE sql CHARACTER '';
+			-- SET DBLogging Properties ==============
+			SET reqMsg = getPayLoad(domainName,domainDataRef,encodeRef,ccidRef);
+			SET Environment.MQRFH2.reqMsg = reqMsg;
+			SET UUID = UUIDASCHAR;
+			SET Environment.MQRFH2.UID = UUID;
+			SET Environment.MQRFH2.FileName = InputLocalEnvironment.File.Name;
+			DECLARE outRefer REFERENCE TO OutputRoot;
+			DECLARE inRefer REFERENCE TO InputRoot.DFDL.stewardBank_CSV.record;
+			CALL initLog4j(LOG_CONFIG_PATH) INTO rc;
+			IF ( rc = FALSE ) THEN
+				SET Environment.Variables.Log4j.ErrorMsg = LOG4J_INIT_ERROR_MSG;
+			END IF;
+			DECLARE inAmount REFERENCE TO InputRoot.DFDL.stewardBank_CSV.record.Amount;
+			IF CONTAINS(inAmount,'-') OR inAmount IS NULL THEN
+				IF IsLogRequired LIKE 'Y' THEN
+					CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','*..............Start Salary & Corporate Payments Logging...........') INTO rc;
+					CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','CSV Data:: '||reqMsg) INTO rc;
+					CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','..............Failure due to Negative Amount...........') INTO rc;
+					CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Negative Amount/No Amount :: '||inRefer.Amount) INTO rc;
+					CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Message ID :: '|| Environment.MQRFH2.UID) INTO rc;
+					CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','..............End of Logging...........*') INTO rc;
+				END IF;
+				IF CONTAINS(inRefer.Purpose,'Salary') OR CONTAINS(inRefer.Purpose,'Salaries')THEN
+					CALL INSERT_SB_SCP_TRACKING(Environment.MQRFH2.UID,'PENDING','PENDING','PENDING','PENDING','Negative Amount/No amount',InputLocalEnvironment.File.Name,reqMsg,inRefer.Amount,
+					inRefer.Remitter_Account_Number,inRefer.Beneficiary_Account_Number,inRefer.Date,'','PENDING','FAILURE','PENDING','FAILURE','SUCCESS',CAST(dbLoggingDate AS TIMESTAMP),CAST(dbLoggingDate AS TIMESTAMP),'FALSE');
+				ELSE
+					CALL INSERT_SB_SCP_TRACKING(Environment.MQRFH2.UID,'PENDING','PENDING','PENDING','PENDING','Negative Amount/No amount',InputLocalEnvironment.File.Name,reqMsg,inRefer.Amount,
+					inRefer.Remitter_Account_Number,inRefer.Beneficiary_Account_Number,inRefer.Date,'','PENDING','FAILURE','PENDING','FAILURE','SUCCESS',CAST(dbLoggingDate AS TIMESTAMP),CAST(dbLoggingDate AS TIMESTAMP),'TRUE');
+				END IF;
+			ELSE
+				/* ============== CALL ISAVE DB LOOKUP ===================== */
+				SET sql='SELECT * FROM ISAVE_CARD_MAPPING WHERE ACCOUNT_ID=?';
+				DECLARE CreditAccount CHARACTER InputRoot.DFDL.stewardBank_CSV.record.Beneficiary_Account_Number;
+				SET Response.accountEnquiry[]=PASSTHRU(sql VALUES(CreditAccount));
+				SET Environment.accountEnquiry.*[]=Response.accountEnquiry.*[];
+				SET Environment.CreditAccount=CreditAccount;
+				IF EXISTS (Response.accountEnquiry.*[]) OR STARTSWITH(CreditAccount,'2') THEN
+					--------ZSS-----------
+					IF IsLogRequired LIKE 'Y' THEN
+						CALL DBLogging(Environment.MQRFH2.UID,reqMsg,'ZSS RouteFlow Request',ApplicationLabel,BrokerName,CAST(dbLoggingTime AS CHARACTER FORMAT 'HHmmss'),CAST(dbLoggingDate AS CHARACTER FORMAT 'ddMM'),inRef.DFDL.stewardBank_CSV.record.Purpose,'','',outRefer);
+						SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+						PROPAGATE TO TERMINAL 'out2';
+					END IF;
+					IF IsLogRequired LIKE 'Y' THEN
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','*..............Start Salary & Corporate Payments ZSS Logging...........') INTO rc;
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Sending Data to ZSS :: '||reqMsg) INTO rc;
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','CreditAccountId :: '||CreditAccount) INTO rc;
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Message ID :: '|| Environment.MQRFH2.UID) INTO rc;
+					END IF;
+					SET OutputRoot.Properties = InputRoot.Properties;
+					SET OutputRoot.MQRFH2 = Environment.MQRFH2;
+					SET OutputRoot.DFDL = Environment.Variable.data;
+					--SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = ZSS_Queue;
+					SET Environment.zssRecord = 'Y';
+					PROPAGATE TO TERMINAL 'out1';
+				ELSE
+					--------T24----------
+					IF IsLogRequired LIKE 'Y' THEN
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','*..............Start Salary & Corporate Payments T24 Logging ...........') INTO rc;
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','Sending Data To T24 :: '||reqMsg) INTO rc;
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','CreditAccountId :: '||CreditAccount) INTO rc;
+						CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsT24Logger', 'DEBUG','Message ID :: '|| Environment.MQRFH2.UID) INTO rc;
+						CALL DBLogging(Environment.MQRFH2.UID,reqMsg,'T24 RouteFlow Request',ApplicationLabel,BrokerName,CAST(dbLoggingTime AS CHARACTER FORMAT 'HHmmss'),CAST(dbLoggingDate AS CHARACTER FORMAT 'ddMM'),inRef.DFDL.stewardBank_CSV.record.Purpose,'','',outRefer);
+						SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+						PROPAGATE TO TERMINAL 'out2';
+					END IF;
+					SET OutputRoot.Properties = InputRoot.Properties;
+					SET OutputRoot.MQRFH2 = Environment.MQRFH2;
+					SET OutputRoot.DFDL = Environment.Variable.data;
+					--SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = T24_Queue;
+					SET Environment.t24record = 'Y';
+					PROPAGATE TO TERMINAL 'out';
+				END IF;
+			END IF;
+
+			RETURN FALSE;
+		ELSE
+			RETURN FALSE;
+		END CASE;
+	END;
+END MODULE;
+---------------------------------------------
+
+
+-----------
+
+
+---------------
+
+
+
+--------
+
+----------------
+CREATE COMPUTE MODULE SalaryCorporatePaymentsFlow_BuildException
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		CALL BuildException();
+		RETURN FALSE;
+	END;
+	CREATE PROCEDURE BuildException() BEGIN
+		DECLARE rc BOOLEAN FALSE;
+
+		SET UUID = UUIDASCHAR;
+
+		CALL initLog4j(LOG_CONFIG_PATH) INTO rc;
+		IF ( rc = FALSE ) THEN
+			SET Environment.Variables.Log4j.ErrorMsg = LOG4J_INIT_ERROR_MSG;
+		END IF;
+		SET UUID = UUIDASCHAR;
+		DECLARE reqMsg CHARACTER;
+		SET Environment.MQRFH2.usr.UID = UUID;
+
+		SET OutputRoot.Properties = InputRoot.Properties;
+		SET OutputRoot.MQRFH2 = InputRoot.MQRFH2;
+		DECLARE excpRef REFERENCE TO InputRoot.XMLNSC.ExceptionDetails;
+		DECLARE outRefer REFERENCE TO OutputRoot;
+		DECLARE encodeRef REFERENCE TO InputRoot.Properties.Encoding;
+		DECLARE ccidRef REFERENCE TO InputRoot.Properties.CodedCharSetId;
+		DECLARE domainName CHARACTER FIELDNAME(InputBody);
+		DECLARE dbLoggingTime TIMESTAMP CURRENT_TIME;
+		DECLARE dbLoggingDate TIMESTAMP CURRENT_TIMESTAMP;
+		DECLARE creditAccountId CHARACTER;
+		SET reqMsg = Environment.Variable.data.stewardBank_CSV;
+		SET creditAccountId = Environment.Variables.Crt_Acc;
+		DECLARE inRefer REFERENCE TO InputRoot.DFDL.stewardBank_CSV.record;
+
+		DECLARE inRef REFERENCE TO InputRoot.XMLNSC;
+		CREATE LASTCHILD OF OutputRoot DOMAIN 'XMLNSC';
+		CREATE LASTCHILD OF OutputRoot.XMLNSC NAME 'SalaryCorporatePayments';
+		DECLARE outRef REFERENCE TO OutputRoot.XMLNSC.*;
+		CALL BuildExceptionDetails(excpRef,outRef,'SalaryCorporatePayments');
+		SET Environment.Variables.UserDefinedErrorCodes = OutputRoot.XMLNSC;
+		DECLARE domainDataRef REFERENCE TO OutputRoot.XMLNSC;
+		DECLARE exe_Desc CHARACTER getPayLoad(domainName,domainDataRef,encodeRef,ccidRef);
+
+		IF CONTAINS(excpRef.excpText,'Database') OR CONTAINS(excpRef.excpText,'T24ClientOut,connection refused') OR CONTAINS(excpRef.excpText,'SocketException') THEN
+			SET OutputLocalEnvironment.Destination.File.Directory = SCP_DBFailure||CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'yyyyMMdd');
+			SET OutputLocalEnvironment.Destination.File.Name = Environment.Variables.FileName||'_'||creditAccountId||'_'||CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'HHmmss')||'.csv';
+		ELSE
+			SET OutputLocalEnvironment.Destination.File.Directory = SCP_FormatFailure||CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'yyyyMMdd');
+			SET OutputLocalEnvironment.Destination.File.Name = Environment.Variables.FileName||'_'||creditAccountId||'_'||CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'HHmmss')||'.csv';
+		END IF;
+		SET OutputRoot.Properties.MessageSet = InputRoot.Properties.MessageSet;
+		SET OutputRoot.Properties.MessageType = InputRoot.Properties.MessageType;
+
+		IF Environment.Variables.UID IS NOT NULL THEN
+
+		ELSE
+			SET Environment.Variables.UID = UUID;
+			SET Environment.insert = 'Y';
+		END IF;		
+		
+		
+
+
+		IF Environment.Variables.excpType LIKE 'ParserException' AND Environment.zssRecord IS NULL AND Environment.t24record IS NULL THEN
+			IF Environment.insert = 'Y' THEN
+				CALL INSERT_SB_SCP_TRACKING(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING',COALESCE(exe_Desc,''), COALESCE (InputLocalEnvironment.File.Name,''),COALESCE(reqMsg,''),COALESCE(inRefer.Amount,''),
+				COALESCE(inRefer.Remitter_Account_Number,''),COALESCE(inRefer.Beneficiary_Account_Number,''),COALESCE(inRefer.Date,''),'','PENDING','FAILURE','PENDING','FAILURE','SUCCESS',CAST(dbLoggingDate AS TIMESTAMP),CAST(dbLoggingDate AS TIMESTAMP),'FALSE');			
+
+
+				COMMIT;
+			ELSE
+				CALL UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING',exe_Desc,'FAILURE','NOT APPLICABLE','NOT APPLICABLE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+				COMMIT;
+			END IF;
+		ELSEIF Environment.zssRecord IS NULL AND Environment.t24record IS NULL THEN
+			IF Environment.insert = 'Y' THEN
+				CREATE LASTCHILD OF OutputRoot DOMAIN('DFDL')PARSE(Environment.MQRFH2.reqMsg ENCODING encodeRef CCSID ccidRef SET '{SB_CSV_Lib}' TYPE '{}:stewardBank_CSV');
+				CALL INSERT_SB_SCP_TRACKING(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING',COALESCE(exe_Desc,''), COALESCE (InputLocalEnvironment.File.Name,''),COALESCE(reqMsg,''),COALESCE(inRefer.Amount,''),
+				COALESCE(inRefer.Remitter_Account_Number,''),COALESCE(inRefer.Beneficiary_Account_Number,''),COALESCE(inRefer.Date,''),'','PENDING','FAILURE','PENDING','FAILURE','SUCCESS',CAST(dbLoggingDate AS TIMESTAMP),CAST(dbLoggingDate AS TIMESTAMP),'FALSE');
+
+				COMMIT;
+				PROPAGATE TO TERMINAL 'out1';
+			ELSE
+
+				CREATE LASTCHILD OF OutputRoot DOMAIN('DFDL')PARSE(Environment.MQRFH2.reqMsg ENCODING encodeRef CCSID ccidRef SET '{SB_CSV_Lib}' TYPE '{}:stewardBank_CSV');
+				CALL UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING',exe_Desc,'FAILURE','NOT APPLICABLE','NOT APPLICABLE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+				COMMIT;
+				PROPAGATE TO TERMINAL 'out1';
+			END IF;
+		END IF;		
+		
+
+
+		SET OutputRoot.DFDL = NULL;
+		-- DECLARE inRef REFERENCE TO InputRoot.XMLNSC;
+		-- CREATE LASTCHILD OF OutputRoot DOMAIN 'XMLNSC';
+		-- CREATE LASTCHILD OF OutputRoot.XMLNSC NAME 'SalaryCorporatePayments';
+		-- DECLARE outRef REFERENCE TO OutputRoot.XMLNSC.*;
+		-- CALL BuildExceptionDetails(excpRef,outRef,'SalaryCorporatePayments');
+		-- SET Environment.Variables.UserDefinedErrorCodes = OutputRoot.XMLNSC;
+		-- DECLARE domainDataRef REFERENCE TO OutputRoot.XMLNSC;
+		-- DECLARE exe_Desc CHARACTER getPayLoad(domainName,domainDataRef,encodeRef,ccidRef);
+		-- UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING','PENDING','FAILURE','PENDING','FAILURE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+		--------
+		-- IF EXISTS (Environment.accountEnquiry.*[]) OR STARTSWITH(Environment.CreditAccount,'2') THEN
+		-- --------ZSS-----------
+		-- CALL UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING',exe_Desc,'FAILURE','NOT APPLICABLE','NOT APPLICABLE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+		-- ELSE
+		-- CALL UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','000','NOT APPLICABLE','NOT APPLICABLE',exe_Desc,'FAILURE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+		-- END IF;
+
+
+		IF Environment.zssRecord IS NOT NULL THEN
+			CALL UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','PENDING',exe_Desc,'FAILURE','NOT APPLICABLE','NOT APPLICABLE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+			COMMIT;
+		END IF;
+
+		IF Environment.t24record IS NOT NULL THEN
+			CALL UPDATE_SB_SCP_STATUS(Environment.Variables.UID,'PENDING','PENDING','PENDING','000','NOT APPLICABLE','NOT APPLICABLE',exe_Desc,'FAILURE',CAST(Environment.Variables.CreationDate AS TIMESTAMP));
+			COMMIT;
+		END IF;
+
+
+
+		--------
+		IF IsLogRequired LIKE 'Y' THEN
+			CALL writeToLogFile(MessageFlowLabel, 'ErrorLogger', 'DEBUG','..............Logging Exception ...........') INTO rc;
+			CALL writeToLogFile(MessageFlowLabel, 'ErrorLogger', 'ERROR','Application Built Exception:'||exe_Desc) INTO rc;
+		END IF;
+		SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = EXCEPTION_Q;
+		PROPAGATE TO TERMINAL 'out';
+		------------Error Logging in DB----------
+		IF IsLogRequired LIKE 'Y' THEN
+			CALL Error_DBLogging(Environment.MQRFH2.usr.UID,reqMsg,'Application Error',ApplicationLabel,BrokerName,exe_Desc,CAST(dbLoggingTime AS CHARACTER FORMAT 'HHmmss'),CAST(dbLoggingDate AS CHARACTER FORMAT 'ddMM'),Environment.MQRFH2.usr.retrievalReferenceNumber,CAST(excpRef.excpNumber AS CHARACTER),Environment.Variables.UserDefinedErrorCodes.SalaryCorporatePayments.ErrorCode,'','',outRefer);
+			CALL writeToLogFile(MessageFlowLabel, 'ErrorLogger', 'ERROR','Exception Created:'||exe_Desc) INTO rc;
+		END IF;
+		SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = ERROR_AUDIT_QNAME;
+		PROPAGATE TO TERMINAL 'out';
+	END;
+END MODULE;
+----------
+
+
+--CREATE PROCEDURE INSERT_SB_SCP_TRACKING (IN PAYNET_GUID CHARACTER,IN PAYNET_STAN_NUM CHARACTER, IN PAYNET_STANDATE CHARACTER,IN PAYNET_RRN_REF CHARACTER,
+--IN PAYNET_ISO_ZSS_REQUEST_MSG CHARACTER,IN PAYNET_RESPONSE_CODE CHARACTER,IN PAYNET_CSV_FILENAME CHARACTER,IN PAYNET_CSV_FIELDS CHARACTER,IN PAYNET_CSV_AMOUNT CHARACTER,
+--IN PAYNET_CSV_DTACCOUNT CHARACTER,IN PAYNET_CSV_CRACCOUNT CHARACTER,IN PAYNET_CSV_DTDATE CHARACTER,IN PAYNET_T24_REQUEST_URL CHARACTER,IN PAYNET_ZSS_RESPONSE CHARACTER,
+--IN PAYNET_ZSS_STATUS CHARACTER,IN PAYNET_T24_RESPONSE CHARACTER,IN PAYNET_T24_STATUS CHARACTER,IN PAYNET_CSV_STATUS CHARACTER,IN PAYNET_DATECREATED TIMESTAMP,IN PAYNET_DATEUPDATED TIMESTAMP,IN PAYNET_TAXABLE CHARACTER)
+--LANGUAGE DATABASE
+--EXTERNAL NAME "INSERT_SB_SCP_TRACKING";
+
+
+CREATE PROCEDURE UPDATE_SB_SCP_STATUS(IN PAYNET_ID CHARACTER,IN PAYNET_STAN_NUM CHARACTER,IN PAYNET_STANDATE CHARACTER,IN PAYNET_RRN_REF CHARACTER,
+IN PAYNET_RESPONSE_CODE CHARACTER,IN PAYNET_ZSS_RESPONSE CHARACTER,IN PAYNET_ZSS_STATUS CHARACTER,IN PAYNET_T24_RESPONSE CHARACTER,IN PAYNET_T24_STATUS CHARACTER,IN PAYNET_DATEUPDATED TIMESTAMP)
+LANGUAGE DATABASE
+EXTERNAL NAME "UPDATE_SB_SCP_STATUS";

@@ -1,0 +1,179 @@
+
+PATH A_projectlevel_subflow;
+CREATE COMPUTE MODULE ZSBSCPA_MSG_Compute2
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+
+		CALL RequestToZss();
+		RETURN FALSE;
+	END;
+	CREATE PROCEDURE RequestToZss() BEGIN
+		DECLARE rc BOOLEAN FALSE;
+		SET Environment.MQRFH2= InputRoot.MQRFH2;
+		DECLARE ccidRef INTEGER InputRoot.Properties.CodedCharSetId;
+		DECLARE encodeRef INTEGER InputRoot.Properties.Encoding;
+		SET Environment.Variables.UID = InputRoot.MQRFH2.UID;
+		DECLARE inRef REFERENCE TO InputRoot.DFDL.stewardBank_CSV.record;
+		DECLARE outRefer REFERENCE TO OutputRoot;
+		DECLARE dbLoggingTime TIMESTAMP CURRENT_TIME; --2020-07-15 19:45:40.694
+		DECLARE dbLoggingDate TIMESTAMP CURRENT_TIMESTAMP;
+		DECLARE tiime,str,csvDate,executionDate CHARACTER;
+		SET tiime = inRef.Date; ---29/06/2020---
+		DECLARE target DATE;
+		DECLARE pattern CHARACTER 'd/M/yyyy';
+		SET target = cast(tiime as DATE FORMAT pattern); ---2021-10-21--
+		-- SET str = SUBSTRING(tiime FROM 7 FOR 4)||SUBSTRING(tiime FROM 4 FOR 2)||SUBSTRING(tiime FROM 1 FOR 2);
+		DECLARE pattern1 CHARACTER 'yyyyMMdd';
+		SET csvDate = CAST(target AS CHARACTER FORMAT pattern1);
+		DECLARE indomainDataRef REFERENCE TO InputRoot.DFDL.stewardBank_CSV;
+		DECLARE domainName CHARACTER 'stewardBank_CSV';
+		SET Environment.Variables.csvReqMsg = getPayLoad(domainName,indomainDataRef,encodeRef,ccidRef);
+		-- SET DBLogging Properties ==============
+		SET Environment.Variables.FileName = SUBSTRING(InputRoot.MQRFH2.FileName BEFORE '.csv' );
+		SET Environment.Variables.Dbt_Acc = inRef.Remitter_Account_Number;
+		--SET Environment.Variables.Crt_Acc = inRef.Beneficiary_Account_Number;
+		IF inRef.Beneficiary_Account_Number IS NOT NULL THEN
+			SET Environment.Variables.Crt_Acc = inRef.Beneficiary_Account_Number;
+		ELSE
+			SET Environment.Variables.Crt_Acc = 'No Credit Account Number';
+		END IF;
+		SET Environment.Variables.CsvDate = csvDate;
+		SET Environment.Variables.CreationDate = CAST(CURRENT_TIMESTAMP AS TIMESTAMP);
+		SET Environment.Variables.RRN = inRef.Purpose;
+		DECLARE Env REFERENCE TO Environment.Variables;
+		SET Env.TaxableCheck = inRef.Purpose;
+		/*=================== CALLING LOG4j LOGGING ==============*/
+		CALL initLog4j(LOG_CONFIG_PATH) INTO rc;
+		IF ( rc = FALSE ) THEN
+			SET Environment.Variables.Log4j.ErrorMsg = LOG4J_INIT_ERROR_MSG;
+		END IF;
+		---------------------------------------------------------------------------------
+		DECLARE stri,Field7,Field12,Field13 CHARACTER;
+		DECLARE trnTime TIMESTAMP CURRENT_GMTTIMESTAMP;
+		--SET timee = dbLoggingTime;
+		---SET stri = SUBSTRING(timee FROM 17 FOR 2)||SUBSTRING(timee FROM 20 FOR 2)||SUBSTRING(timee FROM 23 FOR 2)||SUBSTRING(timee FROM 26 FOR 2)||SUBSTRING(timee FROM 29 FOR 2);
+	--	--SET Field7 = CAST(trnTime AS CHARACTER FORMAT 'MMDDhhmmss');--change
+		SET Field7 = '1208043102';
+		SET Field13 = CAST(trnTime AS CHARACTER FORMAT 'MMDD');
+		SET Field12 = CAST(trnTime AS CHARACTER FORMAT 'HHmmss');
+		----------------------------------------------------------------------------------
+		DECLARE purpose CHARACTER inRef.Purpose;
+		DECLARE PurposeLength INTEGER LENGTH(inRef.Purpose);
+		IF PurposeLength < 6 THEN
+			WHILE PurposeLength < 6 DO
+				SET purpose = purpose||' ';
+				SET PurposeLength = PurposeLength+1;
+			END WHILE;
+		ELSE
+			SET purpose = SUBSTRING(inRef.Purpose FROM 1 FOR 6);
+		END IF;
+		DECLARE field4 DECIMAL;
+		SET field4 = inRef.Amount;
+		SET field4 = field4 * 100 ;
+		DECLARE inField4 CHARACTER;
+		SET inField4 = field4;
+		--CSV to ISO8583 field to field mapping--
+		SET OutputRoot.Properties.MessageSet= '{ISO8583_Lib}';
+		SET OutputRoot.Properties.MessageType= '{}:ISO8583_1987';
+		CREATE LASTCHILD OF OutputRoot DOMAIN 'DFDL';
+		CREATE LASTCHILD OF OutputRoot.DFDL NAME 'ISO8583_1987';
+		DECLARE outRef REFERENCE TO OutputRoot.DFDL.ISO8583_1987;
+		SET outRef.MTI_Version='0';
+		SET outRef.MTI_MessageClass='2';
+		SET outRef.MTI_MessageFunction='0';
+		SET outRef.MTI_MessageOrigin='0';
+		-- IF Env.FileNameCheck LIKE 'PM' THEN
+		-- SET outRef.ProcessingCode_003 = '410000';
+		-- ELSE
+		-- SET outRef.ProcessingCode_003 = '420000';
+		-- END IF;
+		SET outRef.ProcessingCode_003 = '210020';
+		IF CONTAINS(inField4,'.') THEN /* For Hanlding the cent format Amount data*/
+		SET inField4 = SUBSTRING(inField4 BEFORE '.');
+		--SET inField4 = REPLACE(inField4,'.','');
+		SET outRef.AmountTransaction_004 = CAST(inField4 AS DECIMAL); --
+		SET Environment.Variables.Amount = inRef.Amount;
+	ELSE
+		SET inField4 = inField4||'.00';
+		SET Environment.Variables.Amount = inField4;
+		SET outRef.AmountTransaction_004 = field4;
+	END IF;
+	SET outRef.TransmissionDatetime_007 = Field7; --
+	SET outRef.SystemsTraceAuditNumber_011 = '654321';
+	SET outRef.TimeLocalTransaction_012 = Field12;
+	SET outRef.DateLocalTransaction_013 = SUBSTRING(Field13 FROM 1 FOR 4);
+	SET outRef.DateSettlement_015 = SUBSTRING(Field13 FROM 1 FOR 4);
+	SET outRef.MerchantType_018 = '6011';
+	SET outRef.PointOfServiceEntryMode_022 = '001';
+	SET outRef.PointOfServiceConditionCode_025 = '27';
+	SET outRef.PointOfServiceCaptureCode_026 = '12';
+	SET outRef.AmountTransactionFee_028 = 'C00000000';
+	SET outRef.AmountTransactionProcessingFee_030 = 'C00000000';
+	SET outRef.AcquiringInstitutionIdentificationCode_032 = '502195';
+	SET outRef.ForwardingInstitutionIdentificationCode_033 = '502195';
+	SET outRef.RetrievalReferenceNumber_037 = 'IPP201980008';
+	SET outRef.CardAcceptorTerminalIdentification_041 = 'ISAVE263';
+	SET outRef.CardAcceptorIdentificationCode_042 = '26377-SBZWISAVE';
+	SET outRef.CardAcceptorNameLocation_043 = '12486425402013EYE TRACK SATELL          ';
+	SET outRef.CurrencyCodeTransaction_049 = '932';
+	SET outRef.ReservedNational_059 = '0116742676';
+	SET outRef.ReceivingInstitutionIdentificationCode_100 = '502195';
+	--SET outRef.AccountIdentification1_102 = inRef.Remitter_Account_Number; --
+	SET outRef.AccountIdentification2_103 = inRef.Beneficiary_Account_Number; --
+	--SET outRef.TransactionDescription_104 = inRef.Tran_ID; --
+	SET outRef.ReservedPrivate_123 = '100450100130021';
+	SET outRef.ReservedPrivate_127 = '000000';
+	SET outRef.SwitchKeyPostilionPrivate_127_2 = inRef.Purpose||','||inRef.Beneficiary_Bank_Name||','||inRef.Beneficiary_Bank_Code||','||inRef.Beneficiary_Account_Number||','||inRef.Beneficiary_Name||','||inRef.Remitter_Name; --
+	SET outRef.AdditionalNodeDataPostilionPrivate_127_9 = '20200717'; --
+	SET outRef.OriginalKeyPostilionPrivate_127_12 = 'SSB1001199788'; --
+	SET outRef.ExtendedTransactionTypePostilionPrivate_127_33 = '9040'; --
+	CALL UpdateMsgWithAsciiBitMap(outRef);
+	DECLARE domainDataRef REFERENCE TO OutputRoot.DFDL;
+	SET Environment.Variables.reqMsg = getPayLoad(FIELDNAME(OutputRoot.DFDL),domainDataRef,encodeRef,ccidRef);
+	SET Environment.dfdlData = OutputRoot.DFDL;
+	--
+	DECLARE reqMsgJson CHARACTER '';
+	DECLARE logRef REFERENCE TO OutputRoot.DFDL.ISO8583_1987;
+	DECLARE jsonRef REFERENCE TO OutputRoot;
+	CREATE LASTCHILD OF OutputRoot AS jsonRef DOMAIN('JSON');
+	CREATE LASTCHILD OF OutputRoot.JSON AS jsonRef NAME ('Data');
+	--CALL JSONLogMessage(logRef,jsonRef);
+	SET jsonRef = logRef;
+	SET reqMsgJson = getPayLoad('JSON',jsonRef,encodeRef,ccidRef);
+	SET OutputRoot.DFDL = NULL;
+	SET OutputRoot.JSON=NULL;
+	/*=================== Audit Logging ==============*/
+	IF IsLogRequired LIKE 'Y' THEN
+		CALL DBLogging(Environment.Variables.UID,reqMsgJson,'ZSS Request Call',ApplicationLabel,BrokerName,CAST(dbLoggingTime AS CHARACTER FORMAT 'HHmmss'),CAST(dbLoggingDate AS CHARACTER FORMAT 'ddMM'),Env.RRN,'','',outRefer);
+	END IF;
+	SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+	PROPAGATE TO TERMINAL 'out1';
+	IF IsLogRequired LIKE 'Y' THEN
+		CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Generating Request to ZSS::') INTO rc;
+		CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG',Environment.Variables.reqMsg) INTO rc;
+		CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','ZSS ISO Request in JSON:: '||reqMsgJson) INTO rc;
+		CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Message ID :: '||Environment.Variables.UID) INTO rc;
+	END IF;
+	/*===================End of Audit Logging==============*/
+	/*================DB Update=======================*/
+
+	IF Env.TaxableCheck LIKE 'SALARY%' OR Env.TaxableCheck LIKE 'Salary%' THEN
+	--	CALL INSERT_SB_SCP_TRACKING(Env.UID,'PENDING','PENDING','PENDING',reqMsgJson,'PENDING',Env.FileName,Environment.Variables.csvReqMsg,inRef.Amount,Env.Dbt_Acc,Env.Crt_Acc,Env.CsvDate,
+	--	'NOT APPLICABLE','PENDING','PENDING','NOT APPLICABLE','NOT APPLICABLE','SUCCESS',CAST(Env.CreationDate AS TIMESTAMP),CAST(Env.CreationDate AS TIMESTAMP),'FALSE');
+		-- INSERT INTO Database.SB_ISAVE_PAYNET_SCP_TRACKING VALUES('6f73d3e2-1547-4e71-b3f0-993128dd1bd7','','','','CHARACTER:{"MTI_Version":"0","MTI_MessageClass":"2","MTI_MessageFunction":"0","MTI_MessageOrigin":"0","PrimaryBitmap":{"Bit001":1,"Bit002":0,"Bit003":1,"Bit004":1,"Bit005":0,"Bit006":0,"Bit007":1,"Bit008":0,"Bit009":0,"Bit010":0,"Bit011":1,"Bit012":1,"Bit013":1,"Bit014":0,"Bit015":1,"Bit016":0,"Bit017":0,"Bit018":1,"Bit019":0,"Bit020":0,"Bit021":0,"Bit022":1,"Bit023":0,"Bit024":0,"Bit025":1,"Bit026":1,"Bit027":0,"Bit028":1,"Bit029":0,"Bit030":1,"Bit031":0,"Bit032":1,"Bit033":1,"Bit034":0,"Bit035":0,"Bit036":0,"Bit037":1,"Bit038":0,"Bit039":0,"Bit040":0,"Bit041":1,"Bit042":1,"Bit043":1,"Bit044":0,"Bit045":0,"Bit046":0,"Bit047":0,"Bit048":0,"Bit049":1,"Bit050":0,"Bit051":0,"Bit052":0,"Bit053":0,"Bit054":0,"Bit055":0,"Bit056":0,"Bit057":0,"Bit058":0,"Bit059":1,"Bit060":0,"Bit061":0,"Bit062":0,"Bit063":0,"Bit064":0},"SecondaryBitmap":{"Bit065":0,"Bit066":0,"Bit067":0,"Bit068":0,"Bit069":0,"Bit070":0,"Bit071":0,"Bit072":0,"Bit073":0,"Bit074":0,"Bit075":0,"Bit076":0,"Bit077":0,"Bit078":0,"Bit079":0,"Bit080":0,"Bit081":0,"Bit082":0,"Bit083":0,"Bit084":0,"Bit085":0,"Bit086":0,"Bit087":0,"Bit088":0,"Bit089":0,"Bit090":0,"Bit091":0,"Bit092":0,"Bit093":0,"Bit094":0,"Bit095":0,"Bit096":0,"Bit097":0,"Bit098":0,"Bit099":0,"Bit100":1,"Bit101":0,"Bit102":0,"Bit103":1,"Bit104":0,"Bit105":0,"Bit106":0,"Bit107":0,"Bit108":0,"Bit109":0,"Bit110":0,"Bit111":0,"Bit112":0,"Bit113":0,"Bit114":0,"Bit115":0,"Bit116":0,"Bit117":0,"Bit118":0,"Bit119":0,"Bit120":0,"Bit121":0,"Bit122":0,"Bit123":1,"Bit124":0,"Bit125":0,"Bit126":0,"Bit127":1,"Bit128":0},"ProcessingCode_003":"210020","AmountTransaction_004":51100,"TransmissionDatetime_007":"1203152947","SystemsTraceAuditNumber_011":"654321","TimeLocalTransaction_012":"152947","DateLocalTransaction_013":"1203","DateSettlement_015":"1203","MerchantType_018":"6011","PointOfServiceEntryMode_022":"001","PointOfServiceConditionCode_025":"27","PointOfServiceCaptureCode_026":"12","AmountTransactionFee_028":"C00000000","AmountTransactionProcessingFee_030":"C00000000","AcquiringInstitutionIdentificationCode_032":"502195","ForwardingInstitutionIdentificationCode_033":"502195","RetrievalReferenceNumber_037":"IPP201980008","CardAcceptorTerminalIdentification_041":"ISAVE263","CardAcceptorIdentificationCode_042":"26377-SBZWISAVE","CardAcceptorNameLocation_043":"12486425402013EYE TRACK SATELL          ","CurrencyCodeTransaction_049":"932","ReservedNational_059":"0116742676","ReceivingInstitutionIdentificationCode_100":"502195","AccountIdentification2_103":"20000051710","ReservedPrivate_123":"100450100130021","ReservedPrivate_127":"000000","PostilionBitmap":{"Bit001":0,"Bit002":1,"Bit003":0,"Bit004":0,"Bit005":0,"Bit006":0,"Bit007":0,"Bit008":0,"Bit009":1,"Bit010":0,"Bit011":0,"Bit012":1,"Bit013":0,"Bit014":0,"Bit015":0,"Bit016":0,"Bit017":0,"Bit018":0,"Bit019":0,"Bit020":0,"Bit021":0,"Bit022":0,"Bit023":0,"Bit024":0,"Bit025":0,"Bit026":0,"Bit027":0,"Bit028":0,"Bit029":0,"Bit030":0,"Bit031":0,"Bit032":0,"Bit033":1,"Bit034":0,"Bit035":0,"Bit036":0,"Bit037":0,"Bit038":0,"Bit039":0,"Bit040":0,"Bit041":0,"Bit042":0,"Bit043":0,"Bit044":0,"Bit045":0,"Bit046":0,"Bit047":0,"Bit048":0,"Bit049":0,"Bit050":0,"Bit051":0,"Bit052":0,"Bit053":0,"Bit054":0,"Bit055":0,"Bit056":0,"Bit057":0,"Bit058":0,"Bit059":0,"Bit060":0,"Bit061":0,"Bit062":0,"Bit063":0,"Bit064":0},"SwitchKeyPostilionPrivate_127_2":"Salary For Month Nov,STEWARD,20000,20000051710,Adamant Motors A,DAIRYHILL INVESTMENTS","AdditionalNodeDataPostilionPrivate_127_9":"20200717","OriginalKeyPostilionPrivate_127_12":"SSB1001199788","ExtendedTransactionTypePostilionPrivate_127_33":"9040"}','PENDING','Salary Batch v2.5.1.1','17610906,30/11/2020,8140000000000,STEWARD,20000,20000051710,Adamant Motors A,511,ZWL,Salary For Month Nov,DAIRYHILL INVESTMENTS','51100.00',
+		--'8140000000000','20201130','NOT','NOT','NOT APPLICABLE','NOT APPLICABLE','PENDING','PENDING','SUCCESS','03-DEC-20 03.06.47.957279000 PM','03-DEC-20 03.06.47.957279000 PM','FALSE');
+
+	ELSE
+	--	CALL INSERT_SB_SCP_TRACKING(Env.UID,'PENDING','PENDING','PENDING',reqMsgJson,'PENDING',Env.FileName,Environment.Variables.csvReqMsg,inRef.Amount,Env.Dbt_Acc,Env.Crt_Acc,Env.CsvDate,
+	--	'NOT APPLICABLE','PENDING','PENDING','NOT APPLICABLE','NOT APPLICABLE','SUCCESS',CAST(Env.CreationDate AS TIMESTAMP),CAST(Env.CreationDate AS TIMESTAMP),'TRUE');
+	END IF;
+	/*=============End===============*/
+	SET OutputRoot.Properties = InputRoot.Properties;
+	SET OutputRoot.Properties.MessageSet='{ISO8583_Lib}';
+	SET OutputRoot.Properties.MessageType='{}:ISO8583_1987';
+	SET OutputRoot.MQMD = InputRoot.MQMD;
+	SET OutputRoot.MQRFH2 = Environment.MQRFH2;
+	SET OutputRoot.DFDL = Environment.dfdlData;
+	PROPAGATE TO TERMINAL 'out';
+END;
+END MODULE;

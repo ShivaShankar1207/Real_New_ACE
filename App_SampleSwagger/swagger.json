@@ -1,0 +1,48 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "title" : "App_SampleSwagger",
+    "version" : "1.0.0",
+    "description" : "App_SampleSwagger"
+  },
+  "paths" : {
+    "/FetchStudentDetails" : {
+      "get" : {
+        "operationId" : "getFetchStudentDetails",
+        "responses" : {
+          "200" : {
+            "description" : "The operation was successful.",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        },
+        "produces" : [ "application/json" ],
+        "description" : "Retrieve FetchStudentDetails",
+        "parameters" : [ {
+          "name" : "param1",
+          "in" : "header",
+          "type" : "string"
+        } ]
+      }
+    }
+  },
+  "basePath" : "/app_sampleswagger/v1",
+  "definitions" : {
+    "EMP" : {
+      "type" : "object",
+      "properties" : {
+        "ID" : {
+          "type" : "object",
+          "properties" : { }
+        },
+        "NAME" : {
+          "type" : "string"
+        },
+        "Projects" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}

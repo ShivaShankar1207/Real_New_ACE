@@ -1,0 +1,21 @@
+
+
+Importing file: C:\Users\Sreenivas Bandaru\IBM\ACET12\TestSample\WSDLLibrary\UserAccessWSDL.wsdl
+
+The WSDL import will proceed with bindings UserAccessWSDLSOAP.
+Creating wsdl schema document for file:///C:/Users/Sreenivas Bandaru/IBM/ACET12/TestSample/WSDLLibrary/UserAccessWSDL.wsdl.
+Parsing wsdl binding {http://www.example.org/UserAccessWSDL/}UserAccessWSDLSOAP.
+Parsing wsdl binding input NewOperation.
+Parsing wsdl binding output NewOperation.
+Processing doc style for operation NewOperation.
+Populating WSDL schema UserAccessWSDL.xsd.
+Creating file UserAccessWSDL.xsd in the workspace.
+Copying source WSDL UserAccessWSDL.wsdl to UserAccessWSDL.wsdl.
+
+Elapsed time processing this message definition file: 4.259 seconds
+Number of warnings for this message definition file: 0
+
+
+Number of files processed: 1
+
+

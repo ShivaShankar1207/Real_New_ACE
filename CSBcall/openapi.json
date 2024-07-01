@@ -1,0 +1,47 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "CSBcall",
+    "version": "1.0.0",
+    "description": "CSBcall"
+  },
+  "servers": [
+    {
+      "url": "/csbcall/v1"
+    }
+  ],
+  "paths": {
+    "/JdbcCon": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        }
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        }
+      }
+    },
+    "/StoredProcedure": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        }
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        }
+      }
+    }
+  }
+}

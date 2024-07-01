@@ -1,0 +1,14 @@
+
+====== Starting plaintext trace (process ID 9556 - integration_server.TEST_SERVER) ======
+=== Build ib000-L211209.2049 (S000-L211209.11153) - IBM App Connect Enterprise 12.0.3.0 ===
+=== Platform Windows 10 Enterprise / AMD64 / 6.3 build 19045  ===
+=== Timestamps are formatted in local time, 330 minutes past GMT. ===
+=== Time now 2024-02-28 15:01:54.059284 ===
+
+
+====== Starting plaintext trace (process ID 9980 - integration_server.TEST_SERVER) ======
+=== Build ib000-L211209.2049 (S000-L211209.11153) - IBM App Connect Enterprise 12.0.3.0 ===
+=== Platform Windows 10 Enterprise / AMD64 / 6.3 build 19045  ===
+=== Timestamps are formatted in local time, 330 minutes past GMT. ===
+=== Time now 2024-04-30 10:57:07.396379 ===
+

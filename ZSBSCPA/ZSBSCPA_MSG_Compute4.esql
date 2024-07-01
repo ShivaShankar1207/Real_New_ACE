@@ -1,0 +1,94 @@
+path A_projectlevel_subflow;
+
+CREATE COMPUTE MODULE ZSBSCPA_MSG_Compute4
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		CALL GenereateResponseToChannel();
+		RETURN TRUE;
+	END;
+	CREATE PROCEDURE GenereateResponseToChannel() BEGIN
+		DECLARE rc BOOLEAN FALSE;
+		CALL initLog4j(LOG_CONFIG_PATH) INTO rc;
+		IF ( rc = FALSE ) THEN
+			SET Environment.Variables.Log4j.ErrorMsg = LOG4J_INIT_ERROR_MSG;
+		END IF;
+		SET OutputRoot.Properties=InputRoot.Properties;
+		DECLARE ccidRef INTEGER InputRoot.Properties.CodedCharSetId;
+		DECLARE encodeRef INTEGER InputRoot.Properties.Encoding;
+		DECLARE domainName CHARACTER FIELDNAME(InputBody);
+		DECLARE domainDataRef REFERENCE TO InputRoot.DFDL;
+		DECLARE outRef REFERENCE TO OutputRoot.DFDL.ISO8583_1987;
+		DECLARE inRef REFERENCE TO InputRoot.DFDL.ISO8583_1987;
+		DECLARE Env REFERENCE TO Environment.Variables;
+		SET Env.reqMsg = getPayLoad(FIELDNAME(InputRoot.DFDL),inRef,encodeRef,ccidRef);
+		DECLARE outRefer REFERENCE TO OutputRoot;
+		SET Env.data = InputRoot.DFDL;
+		DECLARE reqMsgJson CHARACTER'';
+		DECLARE logRef REFERENCE TO InputRoot.DFDL.ISO8583_1987;
+		DECLARE jsonRef REFERENCE TO OutputRoot;
+		CREATE LASTCHILD OF OutputRoot AS jsonRef DOMAIN('JSON');
+		CREATE LASTCHILD OF OutputRoot.JSON AS jsonRef NAME ('Data');
+		--CALL JSONLogMessage(logRef,jsonRef);
+		SET jsonRef = logRef;
+		SET reqMsgJson = getPayLoad('JSON',jsonRef,encodeRef,ccidRef);
+		SET OutputRoot.JSON=NULL;
+		CASE
+		WHEN InputRoot.DFDL.ISO8583_1987.ResponseCode_039 LIKE '00' THEN
+			---Success Case DB Update---
+			CALL UPDATE_SB_SCP_STATUS(Env.UID,inRef.SystemsTraceAuditNumber_011,CAST(Env.CreationDate AS CHARACTER),inRef.RetrievalReferenceNumber_037,inRef.ResponseCode_039,reqMsgJson,'SUCCESS','NOT APPLICABLE','NOT APPLICABLE',CAST(Env.CreationDate AS TIMESTAMP));
+			---------------------------
+			SET OutputRoot = NULL;
+			---DB Logging---
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL DBLogging(Env.UID,reqMsgJson,'ZSS Success Response',ApplicationLabel,BrokerName,inRef.TimeLocalTransaction_012,inRef.DateLocalTransaction_013,Env.RRN,'','',outRefer);
+			END IF;
+			SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+			PROPAGATE TO TERMINAL 'out';
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','..........Logging Success Response...............') INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','ZSS Status :: Success') INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG',Env.reqMsg) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','ZSS Response in JSON:: '||reqMsgJson) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Message ID :: '||Environment.Variables.UID) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','..............End of Logging...........*') INTO rc;
+			END IF;
+			----------------------
+			-- SET OutputRoot.Properties = InputRoot.Properties;
+			-- SET OutputRoot.Properties.MessageSet='{ISO8583_Lib}';
+			-- SET OutputRoot.Properties.MessageType='{}:ISO8583_1987';
+			-- SET OutputRoot.DFDL = Env.data;
+			-- SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = resQueueName;
+			-- PROPAGATE TO TERMINAL 'out';
+			SET OutputRoot =NULL;
+		ELSE
+			---Failure Case DB Update---
+		--	CALL UPDATE_SB_SCP_STATUS(Env.UID,'PENDING','PENDING','PENDING',inRef.ResponseCode_039,reqMsgJson,'FAILURE','NOT APPLICABLE','NOT APPLICABLE',CAST(Env.CreationDate AS TIMESTAMP));
+			---------------
+			SET OutputRoot =NULL;
+			---DB Logging---
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL DBLogging(Env.UID,reqMsgJson,'ZSS Failure Response',ApplicationLabel,BrokerName,inRef.TimeLocalTransaction_012,inRef.DateLocalTransaction_013,inRef.RetrievalReferenceNumber_037,'','',outRefer);
+			END IF;
+			SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = RAW_AUDIT_QNAME;
+			PROPAGATE TO TERMINAL 'out';
+			IF IsLogRequired LIKE 'Y' THEN
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','..........Logging Failure Response...............') INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','ZSS Status:: FAILURE'||'/'||'ResponseCode::'||inRef.ResponseCode_039) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG',Env.reqMsg) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','ISO JSON Response:: '||reqMsgJson) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','Message ID :: '||Environment.Variables.UID) INTO rc;
+				CALL writeToLogFile(MessageFlowLabel, 'SalaryCorporatePaymentsZssLogger', 'DEBUG','..............End of Logging...........*') INTO rc;
+			END IF;
+			-- SET OutputRoot.Properties = InputRoot.Properties;
+			-- SET OutputRoot.DFDL = Env.data;
+			-- SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = resQueueName;
+			-- PROPAGATE TO TERMINAL 'out';
+			SET OutputRoot =NULL;
+			--SET OutputLocalEnvironment.Destination.File.Directory = BackendFailure;
+			--SET OutputLocalEnvironment.Destination.File.Name = Environment.Variables.FileName||'_'||Environment.Variables.Crt_Acc||'_'||CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'HHmmss')||'.csv';
+			SET OutputRoot.Properties= InputRoot.Properties;
+			CREATE LASTCHILD OF OutputRoot DOMAIN('DFDL')PARSE(Environment.MQRFH2.reqMsg ENCODING encodeRef CCSID ccidRef SET '{SB_CSV_Lib}' TYPE '{}:stewardBank_CSV');
+			PROPAGATE TO TERMINAL 'out1';
+		END CASE;
+	END;
+END MODULE;

@@ -1,0 +1,32 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Rest_application1",
+    "version": "1.0.0",
+    "description": "Rest_application1"
+  },
+  "servers": [
+    {
+      "url": "/rest_application1/v1"
+    }
+  ],
+  "paths": {
+    "/test": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        },
+        "parameters": []
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "success"
+          }
+        }
+      }
+    }
+  }
+}

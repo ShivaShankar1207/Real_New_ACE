@@ -1,0 +1,42 @@
+2024-04-30 10:57:07.721591: BIP1990I: Integration server 'TEST_SERVER' starting initialization; version '12.0.3.0' (64-bit) 
+2024-04-30 10:57:07.763398: BIP9905I: Initializing resource managers. 
+Listening for transport dt_socket at address: 9997
+2024-04-30 10:57:17.201038: BIP9906I: Reading deployed resources. 
+2024-04-30 10:57:18.666328: BIP2866I: IBM App Connect Enterprise administration security is inactive. 
+2024-04-30 10:57:18.717266: BIP3132I: The HTTP Listener has started listening on port '7600' for 'RestAdmin http' connections. 
+2024-04-30 10:57:18.720468: BIP1991I: Integration server has finished initialization. 
+2024-04-30 10:59:21.099908: BIP2152I: Configuration message received. 
+2024-04-30 10:59:21.576852: BIP2155I: About to 'Initialize' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 10:59:26.152624: BIP9342I: Created compiled 'XMLNSC' schema file 'Tcp_IP_ServerApp/$mqsiApplication.bir'. 
+2024-04-30 10:59:40.021612: BIP9341I: Created compiled 'DFDL' schema file 'Tcp_IP_ServerApp/$mqsiApplication.dpif'. 
+2024-04-30 10:59:40.490968: BIP5731W: TCPIP Server Connection manager with connection details: '9780' is being 'started'. 
+2024-04-30 10:59:40.521096: BIP2155I: About to 'Start' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 10:59:40.521688: BIP2269I: Deployed resource 'tcp_ip' (uuid='tcp_ip',type='MessageFlow') started successfully. 
+2024-04-30 10:59:40.521788: BIP9332I: Application 'Tcp_IP_ServerApp' has been created successfully. 
+2024-04-30 10:59:40.521864: BIP9326I: The source 'Tcp_IP_ServerAppproject.generated.bar' has been successfully deployed. 
+2024-04-30 10:59:40.522400: BIP2154I: Integration server finished with Configuration message. 
+2024-04-30 11:02:51.213604: BIP2152I: Configuration message received. 
+2024-04-30 11:02:51.213720: BIP2153I: About to 'deleteAll' an integration server. 
+2024-04-30 11:02:51.214536: BIP2155I: About to 'Stop' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 11:02:52.299824: BIP2271I: Deployed resource 'tcp_ip' (uuid='tcp_ip',type='MessageFlow') successfully stopped. 
+2024-04-30 11:02:52.300072: BIP2155I: About to 'TearDown' the deployed resource 'Tcp_IP_ServerApp' of type 'Application'. 
+2024-04-30 11:02:52.301212: BIP5731W: TCPIP Server Connection manager with connection details: '9780' is being 'stopped'. 
+2024-04-30 11:02:52.360392: BIP9521I: Application 'Tcp_IP_ServerApp' has been deleted. 
+2024-04-30 11:02:52.375372: BIP2154I: Integration server finished with Configuration message. 
+2024-04-30 11:06:13.527476: BIP2152I: Configuration message received. 
+2024-04-30 11:06:13.788599: BIP2155I: About to 'Initialize' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 11:06:15.091975: BIP9342I: Created compiled 'XMLNSC' schema file 'TCP_IP_ClientApp/$mqsiApplication.bir'. 
+2024-04-30 11:06:19.487602: BIP9341I: Created compiled 'DFDL' schema file 'TCP_IP_ClientApp/$mqsiApplication.dpif'. 
+2024-04-30 11:06:19.727784: BIP2155I: About to 'Start' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 11:06:19.728574: BIP2269I: Deployed resource 'tcp_ip_msgflow' (uuid='tcp_ip_msgflow',type='MessageFlow') started successfully. 
+2024-04-30 11:06:19.728734: BIP9332I: Application 'TCP_IP_ClientApp' has been created successfully. 
+2024-04-30 11:06:19.728810: BIP9326I: The source 'TCP_IP_ClientAppproject.generated.bar' has been successfully deployed. 
+2024-04-30 11:06:19.729420: BIP2154I: Integration server finished with Configuration message. 
+2024-04-30 11:07:57.670548: BIP2152I: Configuration message received. 
+2024-04-30 11:07:57.670672: BIP2153I: About to 'deleteAll' an integration server. 
+2024-04-30 11:07:57.673668: BIP2155I: About to 'Stop' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 11:08:00.735621: BIP2271I: Deployed resource 'tcp_ip_msgflow' (uuid='tcp_ip_msgflow',type='MessageFlow') successfully stopped. 
+2024-04-30 11:08:00.735972: BIP2155I: About to 'TearDown' the deployed resource 'TCP_IP_ClientApp' of type 'Application'. 
+2024-04-30 11:08:00.737402: BIP5731W: TCPIP Server Connection manager with connection details: '192.168.3.117:9699' is being 'stopped'. 
+2024-04-30 11:08:00.782937: BIP9521I: Application 'TCP_IP_ClientApp' has been deleted. 
+2024-04-30 11:08:00.784434: BIP2154I: Integration server finished with Configuration message. 

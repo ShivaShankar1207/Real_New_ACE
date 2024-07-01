@@ -1,0 +1,21 @@
+
+
+CREATE COMPUTE MODULE SIMULATER_ZSS_App_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+	
+		 CALL ZSSResponseFrame(); 
+		RETURN TRUE;
+	END;
+CREATE PROCEDURE ZSSResponseFrame() BEGIN 
+		DECLARE Response ROW;
+		DECLARE Str CHARACTER 'ISO';
+		--SET Response.ROW[]= SELECT * FROM Database.ORADSN.SYSTEM.RTGSRESPONSE AS A WHERE A.FILENAME=Str;
+--		CREATE LASTCHILD OF Environment.ISORESPONSE;
+--		SET Environment.ISORESPONSE=cast(1456 as BIT);   
+--		SET Response.ROW[1]=Environment;
+--		SET OutputRoot.BLOB.BLOB = Response.ROW[1].ISORESPONSE;       
+--		CREATE LASTCHILD OF OutputRoot DOMAIN('DFDL') PARSE(OutputRoot.BLOB.BLOB ENCODING InputRoot.Properties.Encoding CCSID InputRoot.Properties.CodedCharSetId SET '{ISO8583_Lib}' TYPE '{}:ISO8583WithHeader');
+        SET OutputRoot=InputRoot;
+	END;
+END MODULE;

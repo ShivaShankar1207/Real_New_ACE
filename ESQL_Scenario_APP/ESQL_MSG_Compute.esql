@@ -1,0 +1,41 @@
+
+
+CREATE COMPUTE MODULE ESQL_MSG_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		 CALL CopyEntireMessage();
+		RETURN TRUE;
+	END;
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		DECLARE data_var CHARACTER InputRoot.XMLNSC.data;
+		DECLARE k,i,j,len,datalen INTEGER;
+		SET len =LENGTH(data_var);
+		SET i=1;
+		SET j=1;
+		SET k=1;
+		SET datalen=1;
+		WHILE k<len DO
+		set i =position('|' IN data_var FROM i);
+		IF i=0  THEN  --and CONTAINS('|',data_var)
+		SET	k=len+1;
+		set i =position('|' IN data_var REPEAT j-1);
+		SET datalen=len-i;
+		SET OutputRoot.JSON.Data.emp.x[j]=SUBSTRING(data_var from i+1 for datalen);
+--		ELSEIF CONTAINS('|',data_var) thEN
+--			SET OutputRoot.JSON.Data.emp.x[j]=SUBSTRING(data_var from 1 for len);
+--			SET	k=len+1;
+		ELSEIf i=1 THEN
+			SET i=i+1;
+			SET k=k+1;
+		ELSE
+		set datalen=i-k;
+		SET OutputRoot.JSON.Data.emp.x[j]=SUBSTRING(data_var from k for datalen);
+		SET k=i+1;
+		SET i=i+1;
+		SET j=j+1;
+		END IF;
+		END WHILE;
+	END;
+END MODULE;
+
+

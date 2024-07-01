@@ -1,0 +1,26 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "title" : "RestApiSample1",
+    "version" : "1.0.0",
+    "description" : "RestApiSample1"
+  },
+  "paths" : {
+    "/GetEmployee" : {
+      "get" : {
+        "operationId" : "getGetEmployee",
+        "responses" : {
+          "200" : {
+            "description" : "The operation was successful.",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        },
+        "produces" : [ "application/json" ],
+        "description" : "Retrieve GetEmployee"
+      }
+    }
+  },
+  "basePath" : "/restapisample1/v1"
+}

@@ -1,0 +1,15 @@
+In this task, we get string like this '<data>shiva|1023|SE|hyderabad</data>' and we need to convert that string into JSON format like this 
+Success:
+{
+    "emp": {
+        "x": "shiva",
+        "x": "1023",
+        "x": "SE",
+        "x": "hyderabad"
+    }
+}
+failure:
+data:<data>shiva</data>
+output:satuscode with 500 and some error discription'
+
+
